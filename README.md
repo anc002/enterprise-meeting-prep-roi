@@ -195,10 +195,4 @@ This is a focused V1, not a production research agent.
 - a lightweight form for ROI inputs
 - automated evaluation against a larger set of frontline companies
 
-## Repository structure
 
-├── README.md
-├── workflow.json
-└── examples/
-    ├── workflow-overview.png
-    └── hiller-meeting-brief.html
