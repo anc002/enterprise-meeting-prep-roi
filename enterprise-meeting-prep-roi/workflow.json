@@ -1,0 +1,700 @@
+{
+  "name": "Quinn Analysis",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "d3b54b0b-89e6-43cf-a6a1-c5c533e96db2",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "72a4b838-e65d-4613-9586-f328fcd800f6",
+              "name": "company_name",
+              "value": "Hiller Plumbing, Heating, Cooling & Electrical",
+              "type": "string"
+            },
+            {
+              "id": "cc16648b-87ea-4e64-ab95-e6d3f0b4adfc",
+              "name": "website",
+              "value": "https://happyhiller.com/",
+              "type": "string"
+            },
+            {
+              "id": "3d53c9b5-90d7-4fc7-b4f1-ea67e354a383",
+              "name": "meeting_context",
+              "value": "Introductory enterprise sales meeting",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        224,
+        0
+      ],
+      "id": "394c4a5d-a249-4e1c-9c98-2981cbb63a0e",
+      "name": "Company Input"
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Company Input').item.json.website }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text",
+              "outputPropertyName": "html"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        448,
+        0
+      ],
+      "id": "de889cf9-556d-43a3-b740-38a54b3c25b6",
+      "name": "Fetch Homepage"
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "dataPropertyName": "html",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "page_title",
+              "cssSelector": "title",
+              "skipSelectors": "script, style, noscript, svg"
+            },
+            {
+              "key": "page_text",
+              "cssSelector": "body",
+              "skipSelectors": "script, style, noscript, svg"
+            },
+            {
+              "key": "links",
+              "cssSelector": "a",
+              "returnValue": "attribute",
+              "attribute": "href",
+              "returnArray": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        672,
+        0
+      ],
+      "id": "9e837680-fa1c-43d8-be1b-43565a91c370",
+      "name": "Extract Page Text"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-5.6-luna",
+          "mode": "list",
+          "cachedResultName": "GPT-5.6-LUNA"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are an enterprise meeting-prep analyst for Quinn.\n\nQuinn helps frontline service companies turn SOPs, manuals, videos, and manager knowledge into mobile training, quizzes, AI roleplay, and workforce-readiness programs.\n\nYour job is to analyze ONLY the public company evidence supplied by the user and prepare a concise enterprise meeting brief.\n\nEVIDENCE RULES\n\n1. FACT\nA fact must be directly supported by the supplied evidence.\nEvery fact must include the source URL that supports it.\n\n2. HYPOTHESIS\nA hypothesis is a reasonable implication that could matter to Quinn but is NOT established as fact.\nEvery hypothesis must state the factual evidence it is based on.\n\n3. UNKNOWN\nIf the evidence does not establish something, treat it as unknown.\n\nNever invent:\n- employee counts\n- technician counts\n- location counts\n- hiring volume\n- turnover\n- ramp time\n- training processes\n- manager time spent training\n- financial metrics\n- customer economics\n- software stack\n- internal problems or pain points\n\n4. SOURCE CONFLICTS\nIf sources give conflicting or different figures, do not silently reconcile them.\nExplicitly identify the conflict.\nIf one source is clearly newer or dated, mention that, but still preserve the discrepancy.\n\n5. INTERNAL VS CUSTOMER-FACING EVIDENCE\nExplicitly distinguish between:\n- systems, training, processes, products, or services used by the company's own employees; and\n- products, training, software, or services the company sells or provides to customers.\n\nDo not treat a customer-facing offering as evidence of the company's internal workforce processes.\n\nDo not infer that the company uses its own customer-facing products, training, software, or services internally unless the supplied evidence explicitly establishes that.\n\nCustomer-facing offerings may be included as company context when relevant, but they must not be used as the factual basis for an internal Quinn use case unless separate evidence supports that connection.\n\nIf it is unclear whether something is internal or customer-facing, treat the internal use as unknown.\n\n6. QUINN RELEVANCE\nFocus on frontline workforce scale, training, onboarding, growth, distributed operations, standardization, knowledge transfer, readiness, and customer-facing consistency.\n\nPrefer evidence about the company's own employees, managers, onboarding, operations, and internal training over products or services it sells externally.\n\nDo not imply Quinn should replace hands-on technical instruction, trade school, certifications, required field training, or other required forms of instruction. Quinn may complement those systems.\n\nDo not claim that a company has a training problem simply because it has many employees, locations, or training programs.\n\nDo not manufacture a Quinn use case merely because the company appears operationally complex. Frame relevance as a hypothesis when the underlying need has not been established.\n\nOUTPUT\n\nReturn ONLY valid JSON. Do not use Markdown or code fences.\n\nUse exactly this structure:\n\n{\n  \"company_snapshot\": [\n    \"string\"\n  ],\n  \"frontline_facts\": [\n    {\n      \"fact\": \"string\",\n      \"source_url\": \"string\"\n    }\n  ],\n  \"quinn_hypotheses\": [\n    {\n      \"fact_basis\": \"string\",\n      \"hypothesis\": \"string\",\n      \"why_it_matters_for_quinn\": \"string\"\n    }\n  ],\n  \"source_conflicts\": [\n    {\n      \"issue\": \"string\",\n      \"sources\": [\"string\"],\n      \"handling\": \"string\"\n    }\n  ],\n  \"unknowns\": [\n    \"string\"\n  ],\n  \"discovery_questions\": [\n    {\n      \"question\": \"string\",\n      \"reason\": \"string\"\n    }\n  ],\n  \"roi_inputs\": [\n    {\n      \"input\": \"string\",\n      \"status\": \"Customer input required\",\n      \"why_needed\": \"string\"\n    }\n  ],\n  \"meeting_pov\": \"string\"\n}\n\nREQUIREMENTS\n\n- company_snapshot: 3-5 bullets\n- frontline_facts: 5-8 high-signal facts\n- Prioritize facts about the company's own workforce and operations when available\n- quinn_hypotheses: 3-5 hypotheses\n- Every Quinn hypothesis must be grounded in evidence about the company's own workforce or operations, not solely in a product or service the company sells\n- unknowns: 5-7 important unknowns\n- discovery_questions: exactly 7 questions\n- roi_inputs: 5-8 inputs\n- Never calculate ROI or invent an ROI value\n- Every ROI input must say \"Customer input required\"\n- Discovery questions should validate the hypotheses and gather information required for an ROI case\n- meeting_pov should be 3-5 sentences\n- meeting_pov should explain the 1-2 strongest evidence-based reasons Quinn may be relevant and the biggest uncertainty to validate\n- Be concise. Prioritize information useful immediately before an enterprise sales meeting."
+            },
+            {
+              "content": "=Company:\n{{ $json.company_name }}\n\nWebsite:\n{{ $json.website }}\n\nMeeting context:\n{{ $('Company Input').first().json.meeting_context }}\n\nHomepage:\n{{ $json.homepage_text.slice(0, 15000) }}\n\nAdditional company research:\n{{ JSON.stringify($json.research_sources) }}\n\nPrepare the Quinn enterprise meeting brief."
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {
+          "textFormat": {
+            "textOptions": {
+              "type": "json_object"
+            }
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        2528,
+        16
+      ],
+      "id": "d2e8b865-bcb0-416f-8d2a-37352c33edac",
+      "name": "Quinn Analysis"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst companyInput = $('Company Input').first().json;\n\n// ============================================\n// 1. BASIC COMPANY INPUT\n// ============================================\n\nlet baseUrl = companyInput.website;\n\nif (!baseUrl.startsWith('http://') && !baseUrl.startsWith('https://')) {\n  baseUrl = 'https://' + baseUrl;\n}\n\nbaseUrl = baseUrl.replace(/\\/+$/, '');\n\n\n// ============================================\n// 2. URL HELPERS\n//\n// We deliberately do not use new URL()\n// because it wasn't available in your\n// n8n Cloud Code environment.\n// ============================================\n\nfunction getHost(url) {\n  const match = String(url).match(/^https?:\\/\\/([^/]+)/i);\n\n  if (!match) return null;\n\n  return match[1]\n    .toLowerCase()\n    .replace(/^www\\./, '');\n}\n\n\nfunction getOrigin(url) {\n  const match = String(url).match(/^(https?:\\/\\/[^/]+)/i);\n\n  return match ? match[1] : null;\n}\n\n\nfunction getPath(url) {\n  const match = String(url).match(\n    /^https?:\\/\\/[^/?#]+([^?#]*)/i\n  );\n\n  return match && match[1]\n    ? match[1].toLowerCase()\n    : '/';\n}\n\n\nfunction getPathDepth(path) {\n  return path\n    .split('/')\n    .filter(Boolean)\n    .length;\n}\n\n\nconst companyHost = getHost(baseUrl);\nconst companyOrigin = getOrigin(baseUrl);\n\n\n// ============================================\n// 3. NORMALIZE LINKS\n// ============================================\n\nfunction normalizeLink(rawHref) {\n  if (!rawHref || typeof rawHref !== 'string') {\n    return null;\n  }\n\n  let href = rawHref.trim();\n\n  if (!href) return null;\n\n  // Ignore things that aren't normal webpages\n  if (\n    href.startsWith('#') ||\n    href.startsWith('tel:') ||\n    href.startsWith('mailto:') ||\n    href.startsWith('javascript:') ||\n    href.startsWith('data:')\n  ) {\n    return null;\n  }\n\n  let cleanUrl;\n\n  // Absolute URL\n  if (\n    href.startsWith('http://') ||\n    href.startsWith('https://')\n  ) {\n    cleanUrl = href;\n  }\n\n  // Protocol-relative URL\n  else if (href.startsWith('//')) {\n    cleanUrl = 'https:' + href;\n  }\n\n  // Root-relative URL\n  else if (href.startsWith('/')) {\n    cleanUrl = companyOrigin + href;\n  }\n\n  // Other relative path\n  else {\n    cleanUrl =\n      companyOrigin +\n      '/' +\n      href.replace(/^\\.?\\//, '');\n  }\n\n  // Remove fragment and query parameters\n  cleanUrl = cleanUrl.split('#')[0];\n  cleanUrl = cleanUrl.split('?')[0];\n\n  // Remove trailing slash unless this is root\n  const origin = getOrigin(cleanUrl);\n\n  if (\n    origin &&\n    cleanUrl !== origin &&\n    cleanUrl !== origin + '/'\n  ) {\n    cleanUrl = cleanUrl.replace(/\\/+$/, '');\n  }\n\n  return cleanUrl;\n}\n\n\n// ============================================\n// 4. CHECK WHETHER PAGE BELONGS TO COMPANY\n//\n// Allows:\n//\n// company.com\n// www.company.com\n// jobs.company.com\n// careers.company.com\n//\n// This is important for companies whose\n// careers site lives on a subdomain.\n// ============================================\n\nfunction isCompanySite(url) {\n  const host = getHost(url);\n\n  if (!host || !companyHost) return false;\n\n  return (\n    host === companyHost ||\n    host.endsWith('.' + companyHost) ||\n    companyHost.endsWith('.' + host)\n  );\n}\n\n\n// ============================================\n// 5. GENERIC HARD EXCLUSIONS\n//\n// Only remove pages that almost never provide\n// useful enterprise research.\n// ============================================\n\nfunction shouldExclude(url) {\n  const path = getPath(url);\n\n  const utilityPatterns = [\n    '/privacy',\n    '/legal',\n    '/terms',\n    '/cookies',\n    '/cookie-policy',\n    '/accessibility',\n    '/sitemap',\n    '/login',\n    '/signin',\n    '/sign-in',\n    '/account',\n    '/cart',\n    '/checkout'\n  ];\n\n  if (\n    utilityPatterns.some(pattern =>\n      path.includes(pattern)\n    )\n  ) {\n    return true;\n  }\n\n  // Static files\n  if (\n    /\\.(jpg|jpeg|png|gif|webp|svg|ico|css|js|pdf|zip)$/i\n      .test(path)\n  ) {\n    return true;\n  }\n\n  if (\n    path.includes('/wp-content/') ||\n    path.includes('/assets/')\n  ) {\n    return true;\n  }\n\n  return false;\n}\n\n\n// ============================================\n// 6. SCORE A PAGE ACROSS FOUR RESEARCH TYPES\n//\n// We want evidence diversity:\n//\n// A. workforce\n// B. company\n// C. footprint\n// D. news / growth\n//\n// Training is NOT automatically valuable.\n// It must look like workforce training.\n// ============================================\n\nfunction scoreUrl(url) {\n  const path = getPath(url);\n  const host = getHost(url);\n  const depth = getPathDepth(path);\n\n  const scores = {\n    workforce: 0,\n    company: 0,\n    footprint: 0,\n    news: 0\n  };\n\n\n  // ------------------------------------------\n  // A. WORKFORCE / CAREERS\n  // ------------------------------------------\n\n  if (\n    host.startsWith('jobs.') ||\n    host.startsWith('careers.')\n  ) {\n    scores.workforce = Math.max(\n      scores.workforce,\n      120\n    );\n  }\n\n  if (\n    path.includes('/careers') ||\n    path.includes('/career')\n  ) {\n    scores.workforce = Math.max(\n      scores.workforce,\n      115\n    );\n  }\n\n  if (\n    path.includes('/jobs') ||\n    path.includes('/job/')\n  ) {\n    scores.workforce = Math.max(\n      scores.workforce,\n      110\n    );\n  }\n\n  if (\n    path.includes('apprentice') ||\n    path.includes('apprenticeship')\n  ) {\n    scores.workforce = Math.max(\n      scores.workforce,\n      105\n    );\n  }\n\n  if (\n    path.includes('employment') ||\n    path.includes('recruiting') ||\n    path.includes('recruitment') ||\n    path.includes('talent')\n  ) {\n    scores.workforce = Math.max(\n      scores.workforce,\n      95\n    );\n  }\n\n  if (\n    path.includes('/employees') ||\n    path.includes('/employee') ||\n    path.includes('/people') ||\n    path.includes('/workforce')\n  ) {\n    scores.workforce = Math.max(\n      scores.workforce,\n      80\n    );\n  }\n\n\n  // ------------------------------------------\n  // TRAINING LOGIC\n  //\n  // This is the important Cintas fix.\n  //\n  // \"training\" alone is ambiguous:\n  // the company may SELL training.\n  //\n  // Employee/workforce context makes it\n  // a strong research signal.\n  // ------------------------------------------\n\n  const hasTrainingSignal =\n    path.includes('training') ||\n    path.includes('learning') ||\n    path.includes('academy') ||\n    path.includes('development');\n\n  const hasWorkforceContext =\n    path.includes('career') ||\n    path.includes('job') ||\n    path.includes('employee') ||\n    path.includes('people') ||\n    path.includes('workforce') ||\n    path.includes('talent') ||\n    path.includes('recruit') ||\n    path.includes('apprentice');\n\n  const hasCommercialContext =\n    path.includes('/products') ||\n    path.includes('/product/') ||\n    path.includes('/services/') ||\n    path.includes('/solutions/') ||\n    path.includes('/shop') ||\n    path.includes('/store') ||\n    path.includes('/customers/') ||\n    path.includes('/clients/');\n\n\n  // Clearly workforce-related training\n  if (\n    hasTrainingSignal &&\n    hasWorkforceContext\n  ) {\n    scores.workforce = Math.max(\n      scores.workforce,\n      100\n    );\n  }\n\n  // Generic training page:\n  // weak signal only, and only if it does NOT\n  // look like a commercial product/service.\n  else if (\n    hasTrainingSignal &&\n    !hasCommercialContext &&\n    depth <= 2\n  ) {\n    scores.workforce = Math.max(\n      scores.workforce,\n      40\n    );\n  }\n\n\n  // ------------------------------------------\n  // B. COMPANY / ABOUT\n  // ------------------------------------------\n\n  if (\n    path === '/about' ||\n    path === '/company'\n  ) {\n    scores.company = Math.max(\n      scores.company,\n      110\n    );\n  }\n\n  if (\n    path.includes('/about') ||\n    path.includes('/company') ||\n    path.includes('/who-we-are') ||\n    path.includes('/our-company') ||\n    path.includes('/our-story')\n  ) {\n    scores.company = Math.max(\n      scores.company,\n      100\n    );\n  }\n\n  if (\n    path.includes('/leadership') ||\n    path.includes('/executives') ||\n    path.includes('/management')\n  ) {\n    scores.company = Math.max(\n      scores.company,\n      75\n    );\n  }\n\n  // Investor pages can provide useful scale\n  // information, but are not our first choice.\n  if (\n    path.includes('/investor') ||\n    path.includes('/investors')\n  ) {\n    scores.company = Math.max(\n      scores.company,\n      65\n    );\n  }\n\n\n  // ------------------------------------------\n  // C. OPERATING FOOTPRINT\n  // ------------------------------------------\n\n  if (\n    path.includes('/locations') ||\n    path.includes('/location-finder') ||\n    path === '/location'\n  ) {\n    scores.footprint = Math.max(\n      scores.footprint,\n      105\n    );\n  }\n\n  if (\n    path.includes('/branches') ||\n    path.includes('/branch-locations') ||\n    path.includes('/offices')\n  ) {\n    scores.footprint = Math.max(\n      scores.footprint,\n      90\n    );\n  }\n\n\n  // ------------------------------------------\n  // D. NEWS / GROWTH\n  // ------------------------------------------\n\n  if (path.includes('/newsroom')) {\n    scores.news = Math.max(\n      scores.news,\n      105\n    );\n  }\n\n  if (\n    path.includes('/press') ||\n    path.includes('/news/') ||\n    path === '/news' ||\n    path.includes('/media')\n  ) {\n    scores.news = Math.max(\n      scores.news,\n      90\n    );\n  }\n\n\n  // Strategic events are particularly useful\n  // for enterprise-sales research.\n  const strategicGrowthSignal =\n    path.includes('acquisition') ||\n    path.includes('acquire') ||\n    path.includes('merger') ||\n    path.includes('expansion') ||\n    path.includes('partnership') ||\n    path.includes('partner');\n\n\n  if (strategicGrowthSignal) {\n    scores.news = Math.max(\n      scores.news,\n      110\n    );\n  }\n\n\n  // ------------------------------------------\n  // DEPTH PENALTY\n  //\n  // Prefer broad pages like:\n  //\n  // /careers\n  // /about\n  // /locations\n  // /newsroom\n  //\n  // over deeply nested pages unless the\n  // deeper page has a very strong signal.\n  // ------------------------------------------\n\n  const depthPenalty =\n    Math.max(0, depth - 2) * 4;\n\n  for (const category of Object.keys(scores)) {\n    if (scores[category] > 0) {\n      scores[category] =\n        Math.max(\n          0,\n          scores[category] - depthPenalty\n        );\n    }\n  }\n\n\n  const bestScore = Math.max(\n    scores.workforce,\n    scores.company,\n    scores.footprint,\n    scores.news\n  );\n\n  return {\n    scores,\n    bestScore\n  };\n}\n\n\n// ============================================\n// 7. BUILD UNIQUE CANDIDATES\n// ============================================\n\nconst candidates = [];\nconst seen = new Set();\n\nfor (const rawHref of input.links || []) {\n  const cleanUrl = normalizeLink(rawHref);\n\n  if (!cleanUrl) continue;\n\n  if (!isCompanySite(cleanUrl)) {\n    continue;\n  }\n\n  if (shouldExclude(cleanUrl)) {\n    continue;\n  }\n\n  const dedupeKey =\n    cleanUrl\n      .toLowerCase()\n      .replace(/\\/$/, '');\n\n  if (seen.has(dedupeKey)) {\n    continue;\n  }\n\n  seen.add(dedupeKey);\n\n  const scored = scoreUrl(cleanUrl);\n\n  if (scored.bestScore <= 0) {\n    continue;\n  }\n\n  candidates.push({\n    url: cleanUrl,\n    scores: scored.scores,\n    bestScore: scored.bestScore\n  });\n}\n\n\n// ============================================\n// 8. SELECT DIVERSE RESEARCH PAGES\n//\n// Rather than blindly picking the top four,\n// try to select one page from each category.\n// ============================================\n\nconst categories = [\n  'workforce',\n  'company',\n  'footprint',\n  'news'\n];\n\nconst selected = [];\nconst selectedSet = new Set();\n\n\nfor (const category of categories) {\n  const options = candidates\n    .filter(candidate =>\n      !selectedSet.has(candidate.url) &&\n      candidate.scores[category] > 0\n    )\n    .sort((a, b) => {\n\n      // First: category score\n      const scoreDifference =\n        b.scores[category] -\n        a.scores[category];\n\n      if (scoreDifference !== 0) {\n        return scoreDifference;\n      }\n\n      // Tie: prefer shorter/broader path\n      return (\n        getPath(a.url).length -\n        getPath(b.url).length\n      );\n    });\n\n\n  if (options.length > 0) {\n    const winner = options[0];\n\n    selected.push(winner.url);\n    selectedSet.add(winner.url);\n  }\n}\n\n\n// ============================================\n// 9. FALLBACK\n//\n// Not every company has all four categories.\n//\n// If a category is missing, fill remaining\n// slots with the strongest unused pages.\n// ============================================\n\nif (selected.length < 4) {\n\n  const remaining = candidates\n    .filter(candidate =>\n      !selectedSet.has(candidate.url)\n    )\n    .sort((a, b) => {\n\n      const scoreDifference =\n        b.bestScore - a.bestScore;\n\n      if (scoreDifference !== 0) {\n        return scoreDifference;\n      }\n\n      return (\n        getPath(a.url).length -\n        getPath(b.url).length\n      );\n    });\n\n\n  for (const candidate of remaining) {\n\n    if (selected.length >= 4) {\n      break;\n    }\n\n    selected.push(candidate.url);\n    selectedSet.add(candidate.url);\n  }\n}\n\n\n// ============================================\n// 10. OUTPUT\n// ============================================\n\nreturn [\n  {\n    json: {\n      company_name:\n        companyInput.company_name,\n\n      website:\n        baseUrl,\n\n      homepage_text:\n        input.page_text,\n\n      research_urls:\n        selected.slice(0, 4)\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        0
+      ],
+      "id": "277e77bb-916d-42a2-a1c9-41f3a08d5a94",
+      "name": "Select Research Pages"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.research_url }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text",
+              "outputPropertyName": "html"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1344,
+        16
+      ],
+      "id": "7a076214-3e42-49af-b201-37aa21e6fc06",
+      "name": "Fetch Research Pages"
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "dataPropertyName": "html",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "page_title",
+              "cssSelector": "title"
+            },
+            {
+              "key": "page_text",
+              "cssSelector": "body",
+              "skipSelectors": "script, style, noscript, svg, nav, header, footer"
+            }
+          ]
+        },
+        "options": {
+          "cleanUpText": true
+        }
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        1568,
+        16
+      ],
+      "id": "078e42da-b4d1-4cdc-a5bb-b35c5236ec3d",
+      "name": "Extract Research Text"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c938912f-407a-43c4-b792-39bf2afe374b",
+              "name": "source_url",
+              "value": "={{ $('Split Research URLs').item.json.research_url}}",
+              "type": "string"
+            },
+            {
+              "id": "f51660eb-30ae-40b1-8f5c-010e3e0ab450",
+              "name": "page_title",
+              "value": "={{ $json.page_title }}",
+              "type": "string"
+            },
+            {
+              "id": "98665633-c61b-412b-bdcd-112076a0ddfb",
+              "name": "page_text",
+              "value": "={{ $json.page_text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1792,
+        16
+      ],
+      "id": "dc3bd447-3ad8-4a83-8c74-3b5b4ccef797",
+      "name": "Extract Research Item"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "research_urls",
+        "include": "selectedOtherFields",
+        "fieldsToInclude": "company_name, website",
+        "options": {
+          "destinationFieldName": "research_url"
+        }
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        0
+      ],
+      "id": "38aa8cec-3004-48a4-a0fd-99773496a927",
+      "name": "Split Research URLs"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "research_sources",
+        "include": "specifiedFields",
+        "fieldsToInclude": "source_url,page_title,page_text",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        2032,
+        16
+      ],
+      "id": "6f80f928-3731-41d4-9721-4c6509d7d58f",
+      "name": "Aggregate Research"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ee2bb52c-817d-4651-8f28-ebb89a442a05",
+              "name": "company_name",
+              "value": "={{ $('Company Input').first().json.company_name }}",
+              "type": "string"
+            },
+            {
+              "id": "0570690c-3262-4562-93af-5fdf2ad3da2e",
+              "name": "website",
+              "value": "={{ $('Company Input').first().json.website }}",
+              "type": "string"
+            },
+            {
+              "id": "6c007116-09f3-4bd3-b52e-79a98ce3dffd",
+              "name": "homepage_text",
+              "value": "={{ $('Extract Page Text').first().json.page_text }}",
+              "type": "string"
+            },
+            {
+              "id": "03b18706-b3d3-4d3d-96e6-178784889006",
+              "name": "=research_sources",
+              "value": "={{ $json.research_sources }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2272,
+        16
+      ],
+      "id": "6ac845fe-676c-445e-885d-23564fb6e1db",
+      "name": "Build Evidence Package"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "19798dc3-31bf-4a48-87a4-550862a4dc4b",
+              "name": "brief",
+              "value": "={{ $json.output[0].content[0].text }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2896,
+        16
+      ],
+      "id": "33c7c3ec-a4fd-48b2-9491-3043c7d3bab3",
+      "name": "Extract Quinn Brief"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5f5cf285-e91a-47db-8038-a4744ec8ca2f",
+              "name": "annual_frontline_hires",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "2a048d23-4c89-4066-b41a-5bec9a6fa657",
+              "name": "current_ramp_weeks",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "877873d5-e0d4-4650-9cc2-b77f5a162f86",
+              "name": "current_manager_hours_per_hire",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "7607041f-7c7f-40e4-8cae-640a6f10d70e",
+              "name": "manager_loaded_hourly_cost",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "ed7e8ada-d8d2-4551-8b6d-e70ef0af1927",
+              "name": "annual_quality_cost",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "ec2fb1b3-cffe-4955-ac5a-2086c27cc448",
+              "name": "target_ramp_weeks",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "ef1cbbeb-f0f1-4781-b280-dfa88dbcda3a",
+              "name": "manager_time_reduction_pct",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "25f9041c-d8f3-4f37-b862-ea90a1199015",
+              "name": "quality_cost_reduction_pct",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "c33078fe-dfe4-4706-b598-73eca1c6ff22",
+              "name": "annual_quinn_cost",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        3120,
+        16
+      ],
+      "id": "ee5ac771-cd7f-406e-9f16-54ef7285e698",
+      "name": "ROI Inputs & Assumptions"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst brief = input.brief;\n\nconst REQUIRED = \"Customer input required\";\n\n// Blank stays null. We never interpret missing data as zero.\nfunction num(value) {\n  if (\n    value === undefined ||\n    value === null ||\n    String(value).trim() === \"\"\n  ) {\n    return null;\n  }\n\n  const n = Number(value);\n  return Number.isFinite(n) && n >= 0 ? n : null;\n}\n\nfunction round(n, decimals = 2) {\n  return Number(n.toFixed(decimals));\n}\n\nfunction show(value) {\n  return value === null ? REQUIRED : value;\n}\n\n\n// ---------------------\n// INPUTS\n// ---------------------\n\nconst annualHires = num(input.annual_frontline_hires);\nconst currentRamp = num(input.current_ramp_weeks);\nconst managerHoursPerHire = num(input.current_manager_hours_per_hire);\nconst managerHourlyCost = num(input.manager_loaded_hourly_cost);\nconst annualQualityCost = num(input.annual_quality_cost);\n\nconst targetRamp = num(input.target_ramp_weeks);\nconst managerReductionPct = num(input.manager_time_reduction_pct);\nconst qualityReductionPct = num(input.quality_cost_reduction_pct);\n\nconst quinnCost = num(input.annual_quinn_cost);\n\n\n// ---------------------\n// VALIDATION\n// ---------------------\n\nconst warnings = [];\n\nconst managerPctValid =\n  managerReductionPct === null || managerReductionPct <= 100;\n\nconst qualityPctValid =\n  qualityReductionPct === null || qualityReductionPct <= 100;\n\nconst rampValid =\n  currentRamp === null ||\n  targetRamp === null ||\n  targetRamp <= currentRamp;\n\nif (!managerPctValid) {\n  warnings.push(\n    \"Manager time reduction percentage must be between 0 and 100.\"\n  );\n}\n\nif (!qualityPctValid) {\n  warnings.push(\n    \"Quality cost reduction percentage must be between 0 and 100.\"\n  );\n}\n\nif (!rampValid) {\n  warnings.push(\n    \"Target ramp time cannot be greater than current ramp time.\"\n  );\n}\n\n\n// ---------------------\n// MANAGER / TRAINER VALUE\n// ---------------------\n\nlet managerHoursSavedPerHire = null;\nlet annualManagerHoursSaved = null;\nlet annualManagerTimeValue = null;\n\nif (\n  managerHoursPerHire !== null &&\n  managerReductionPct !== null &&\n  managerPctValid\n) {\n  managerHoursSavedPerHire = round(\n    managerHoursPerHire * (managerReductionPct / 100)\n  );\n}\n\nif (\n  managerHoursSavedPerHire !== null &&\n  annualHires !== null\n) {\n  annualManagerHoursSaved = round(\n    managerHoursSavedPerHire * annualHires\n  );\n}\n\nif (\n  annualManagerHoursSaved !== null &&\n  managerHourlyCost !== null\n) {\n  annualManagerTimeValue = round(\n    annualManagerHoursSaved * managerHourlyCost\n  );\n}\n\n\n// ---------------------\n// RAMP VALUE\n// Operational only — no fake $ conversion\n// ---------------------\n\nlet rampWeeksSavedPerHire = null;\nlet annualWorkforceWeeksGained = null;\n\nif (\n  currentRamp !== null &&\n  targetRamp !== null &&\n  rampValid\n) {\n  rampWeeksSavedPerHire = round(\n    currentRamp - targetRamp\n  );\n}\n\nif (\n  rampWeeksSavedPerHire !== null &&\n  annualHires !== null\n) {\n  annualWorkforceWeeksGained = round(\n    rampWeeksSavedPerHire * annualHires\n  );\n}\n\n\n// ---------------------\n// QUALITY / REWORK VALUE\n// ---------------------\n\nlet annualQualityCostSavings = null;\n\nif (\n  annualQualityCost !== null &&\n  qualityReductionPct !== null &&\n  qualityPctValid\n) {\n  annualQualityCostSavings = round(\n    annualQualityCost * (qualityReductionPct / 100)\n  );\n}\n\n\n// ---------------------\n// TOTAL QUANTIFIED BENEFIT\n// Only use benefit levers we can actually calculate.\n// Missing optional levers are NOT treated as zero.\n// ---------------------\n\nconst benefitValues = [];\nconst includedBenefitLevers = [];\nconst missingBenefitLevers = [];\n\nif (annualManagerTimeValue !== null) {\n  benefitValues.push(annualManagerTimeValue);\n  includedBenefitLevers.push(\"Manager/trainer time\");\n} else {\n  missingBenefitLevers.push(\"Manager/trainer time\");\n}\n\nif (annualQualityCostSavings !== null) {\n  benefitValues.push(annualQualityCostSavings);\n  includedBenefitLevers.push(\"Quality/rework cost\");\n} else {\n  missingBenefitLevers.push(\"Quality/rework cost\");\n}\n\nconst quantifiedAnnualBenefit =\n  benefitValues.length > 0\n    ? round(benefitValues.reduce((a, b) => a + b, 0))\n    : null;\n\n\n// ---------------------\n// ROI\n// ---------------------\n\nlet netAnnualBenefit = null;\nlet roiPercent = null;\nlet paybackMonths = null;\n\nif (\n  quantifiedAnnualBenefit !== null &&\n  quinnCost !== null &&\n  quinnCost > 0\n) {\n  netAnnualBenefit = round(\n    quantifiedAnnualBenefit - quinnCost\n  );\n\n  roiPercent = round(\n    (netAnnualBenefit / quinnCost) * 100\n  );\n\n  if (quantifiedAnnualBenefit > 0) {\n    paybackMonths = round(\n      (quinnCost / quantifiedAnnualBenefit) * 12\n    );\n  }\n}\n\n\n// ---------------------\n// MODEL STATUS\n// ---------------------\n\nlet status = REQUIRED;\n\nif (quantifiedAnnualBenefit !== null && quinnCost === null) {\n  status = \"Benefits partially quantified; Quinn cost required for ROI\";\n}\n\nif (quantifiedAnnualBenefit !== null && quinnCost !== null) {\n  status = \"ROI calculated from supplied inputs\";\n}\n\nif (warnings.length > 0) {\n  status = \"Input validation required\";\n}\n\n\n// ---------------------\n// OUTPUT\n// ---------------------\n\nreturn [\n  {\n    json: {\n      brief,\n\n      roi_model: {\n        status,\n\n        methodology:\n          \"Deterministic model using only customer-supplied baselines and scenario assumptions. Missing values are never invented or treated as zero.\",\n\n        inputs: {\n          annual_frontline_hires: show(annualHires),\n          current_ramp_weeks: show(currentRamp),\n          current_manager_hours_per_hire: show(managerHoursPerHire),\n          manager_loaded_hourly_cost: show(managerHourlyCost),\n          annual_quality_cost: show(annualQualityCost),\n          target_ramp_weeks: show(targetRamp),\n          manager_time_reduction_pct: show(managerReductionPct),\n          quality_cost_reduction_pct: show(qualityReductionPct),\n          annual_quinn_cost: show(quinnCost)\n        },\n\n        calculations: {\n          manager_hours_saved_per_hire:\n            show(managerHoursSavedPerHire),\n\n          annual_manager_hours_saved:\n            show(annualManagerHoursSaved),\n\n          annual_manager_time_value:\n            show(annualManagerTimeValue),\n\n          ramp_weeks_saved_per_hire:\n            show(rampWeeksSavedPerHire),\n\n          annual_workforce_weeks_gained:\n            show(annualWorkforceWeeksGained),\n\n          annual_quality_cost_savings:\n            show(annualQualityCostSavings),\n\n          quantified_annual_benefit:\n            show(quantifiedAnnualBenefit),\n\n          net_annual_benefit:\n            show(netAnnualBenefit),\n\n          roi_percent:\n            show(roiPercent),\n\n          payback_months:\n            show(paybackMonths)\n        },\n\n        included_benefit_levers: includedBenefitLevers,\n        missing_benefit_levers: missingBenefitLevers,\n\n        warnings,\n\n        assumption_note:\n          \"Target ramp time and percentage-reduction assumptions must be supplied or explicitly agreed with the customer. They are not predictions generated by the LLM.\"\n      }\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3344,
+        16
+      ],
+      "id": "e700c710-edab-4a98-81a2-e8f30265cb02",
+      "name": "Deterministic ROI Model"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\nconst brief = data.brief;\nconst roi = data.roi_model;\n\nconst companyInput = $('Company Input').first().json;\n\nconst companyName = companyInput.company_name;\nconst website = companyInput.website;\nconst meetingContext = companyInput.meeting_context;\n\nfunction money(value) {\n  if (typeof value !== 'number') return value;\n  return '$' + value.toLocaleString('en-US', {\n    maximumFractionDigits: 0\n  });\n}\n\nfunction number(value) {\n  if (typeof value !== 'number') return value;\n  return value.toLocaleString('en-US', {\n    maximumFractionDigits: 2\n  });\n}\n\nconst lines = [];\n\n\n// -------------------------\n// HEADER\n// -------------------------\n\nlines.push(`# Quinn Enterprise Meeting Prep — ${companyName}`);\nlines.push('');\nlines.push(`**Website:** ${website}`);\nlines.push(`**Meeting context:** ${meetingContext}`);\nlines.push('');\n\n\n// -------------------------\n// MEETING POV\n// -------------------------\n\nlines.push('## Meeting POV');\nlines.push('');\nlines.push(brief.meeting_pov);\nlines.push('');\n\n\n// -------------------------\n// COMPANY SNAPSHOT\n// -------------------------\n\nlines.push('## Company Snapshot');\nlines.push('');\n\nfor (const item of brief.company_snapshot) {\n  lines.push(`- ${item}`);\n}\n\nlines.push('');\n\n\n// -------------------------\n// FRONTLINE EVIDENCE\n// -------------------------\n\nlines.push('## Frontline Operations Evidence');\nlines.push('');\n\nfor (const item of brief.frontline_facts) {\n\n  // The LLM occasionally includes \"Source: URL\"\n  // inside the fact even though source_url is\n  // already returned separately.\n  //\n  // Remove that duplicate before formatting.\n  const cleanFact = item.fact\n    .replace(\n      /\\s*Source(?:s)?:\\s*https?:\\/\\/\\S+(?:\\s*(?:,|;|and)\\s*https?:\\/\\/\\S+)*\\s*$/i,\n      ''\n    )\n    .trim();\n\n  lines.push(`- ${cleanFact}`);\n  lines.push(`  - Source: ${item.source_url}`);\n}\n\nlines.push('');\n\n\n// -------------------------\n// QUINN HYPOTHESES\n// -------------------------\n\nlines.push('## Quinn Relevance Hypotheses');\nlines.push('');\n\nbrief.quinn_hypotheses.forEach((item, index) => {\n  lines.push(`### ${index + 1}. ${item.hypothesis}`);\n  lines.push('');\n  lines.push(`**Evidence:** ${item.fact_basis}`);\n  lines.push('');\n  lines.push(`**Why it matters:** ${item.why_it_matters_for_quinn}`);\n  lines.push('');\n});\n\n\n// -------------------------\n// DISCOVERY QUESTIONS\n// -------------------------\n\nlines.push('## Discovery Questions');\nlines.push('');\n\nbrief.discovery_questions.forEach((item, index) => {\n  lines.push(`${index + 1}. **${item.question}**`);\n  lines.push(`   - Why ask: ${item.reason}`);\n});\n\nlines.push('');\n\n\n// -------------------------\n// BUSINESS CASE / ROI\n// -------------------------\n\nlines.push('## Business Case');\nlines.push('');\nlines.push(`**Status:** ${roi.status}`);\nlines.push('');\n\nif (roi.status === 'Customer input required') {\n\n  lines.push(\n    'Public research is insufficient to calculate a defensible ROI. Collect customer-specific operating data during discovery.'\n  );\n\n  lines.push('');\n  lines.push('### Inputs to Collect');\n  lines.push('');\n\n  for (const item of brief.roi_inputs) {\n    lines.push(`- **${item.input}**`);\n    lines.push(`  - ${item.why_needed}`);\n  }\n\n} else {\n\n  const c = roi.calculations;\n\n  lines.push('### Quantified Results');\n  lines.push('');\n\n  lines.push(\n    `- Manager hours saved per hire: ${number(c.manager_hours_saved_per_hire)}`\n  );\n\n  lines.push(\n    `- Annual manager hours saved: ${number(c.annual_manager_hours_saved)}`\n  );\n\n  lines.push(\n    `- Annual manager-time value: ${money(c.annual_manager_time_value)}`\n  );\n\n  lines.push(\n    `- Ramp weeks saved per hire: ${number(c.ramp_weeks_saved_per_hire)}`\n  );\n\n  lines.push(\n    `- Annual workforce-weeks gained: ${number(c.annual_workforce_weeks_gained)}`\n  );\n\n  lines.push(\n    `- Annual quality-cost savings: ${money(c.annual_quality_cost_savings)}`\n  );\n\n  lines.push(\n    `- Quantified annual benefit: ${money(c.quantified_annual_benefit)}`\n  );\n\n  lines.push(\n    `- Net annual benefit: ${money(c.net_annual_benefit)}`\n  );\n\n  lines.push(\n    `- ROI: ${\n      typeof c.roi_percent === 'number'\n        ? number(c.roi_percent) + '%'\n        : c.roi_percent\n    }`\n  );\n\n  lines.push(\n    `- Payback period: ${\n      typeof c.payback_months === 'number'\n        ? number(c.payback_months) + ' months'\n        : c.payback_months\n    }`\n  );\n\n  lines.push('');\n  lines.push(\n    `**Included financial levers:** ${\n      roi.included_benefit_levers.join(', ') || 'None'\n    }`\n  );\n\n  if (roi.missing_benefit_levers.length > 0) {\n    lines.push(\n      `**Unquantified levers:** ${roi.missing_benefit_levers.join(', ')}`\n    );\n  }\n\n  lines.push('');\n  lines.push(`*${roi.assumption_note}*`);\n}\n\n\n// -------------------------\n// UNKNOWNS\n// -------------------------\n\nlines.push('');\nlines.push('## Important Unknowns');\nlines.push('');\n\nfor (const item of brief.unknowns) {\n  lines.push(`- ${item}`);\n}\n\n\n// -------------------------\n// SOURCE CONFLICTS\n// -------------------------\n\nif (brief.source_conflicts.length > 0) {\n  lines.push('');\n  lines.push('## Source Conflicts');\n  lines.push('');\n\n  for (const item of brief.source_conflicts) {\n    lines.push(`- **${item.issue}**`);\n    lines.push(`  - Handling: ${item.handling}`);\n  }\n}\n\n\n// -------------------------\n// WARNINGS\n// -------------------------\n\nif (roi.warnings.length > 0) {\n  lines.push('');\n  lines.push('## ROI Warnings');\n  lines.push('');\n\n  for (const warning of roi.warnings) {\n    lines.push(`- ${warning}`);\n  }\n}\n\n\n// -------------------------\n// OUTPUT\n// -------------------------\n\nreturn [\n  {\n    json: {\n      company_name: companyName,\n      website,\n      meeting_context: meetingContext,\n\n      final_brief_markdown: lines.join('\\n'),\n\n      // Preserve structured output as well\n      brief,\n      roi_model: roi\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3568,
+        16
+      ],
+      "id": "4b64edac-0a1f-47cf-9de5-07b842101bed",
+      "name": "Format Final Brief"
+    },
+    {
+      "parameters": {
+        "mode": "markdownToHtml",
+        "markdown": "={{ $json.final_brief_markdown }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.markdown",
+      "typeVersion": 1,
+      "position": [
+        3792,
+        16
+      ],
+      "id": "23ef4911-62fc-47d7-a763-fc7399d48b83",
+      "name": "Render Brief"
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "data",
+        "options": {
+          "fileName": "={{ 'quinn-meeting-brief-' + $json.company_name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '.html' }}"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        4256,
+        16
+      ],
+      "id": "2cccf065-c148-4fc2-a424-2948c8e36c81",
+      "name": "Create Brief File"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\nlet body = input.data || '';\nconst company = input.company_name || 'Company';\n\n// ============================================\n// 1. PRESENTATION CLEANUP\n// ============================================\n\n// Put Website and Meeting context on separate lines.\nbody = body.replace(\n  '\\n<strong>Meeting context:</strong>',\n  '<br>\\n<strong>Meeting context:</strong>'\n);\n\n\n// Make plain-text URLs clickable.\n//\n// The Markdown output currently leaves source URLs\n// as text. Convert them to links while preserving\n// punctuation that follows the URL.\nbody = body.replace(\n  /https?:\\/\\/[^\\s<]+/g,\n  (match) => {\n    let url = match;\n    let trailing = '';\n\n    // Don't accidentally include sentence punctuation\n    // or semicolons separating multiple sources.\n    while (\n      url.length > 0 &&\n      /[.,;:]$/.test(url)\n    ) {\n      trailing = url.slice(-1) + trailing;\n      url = url.slice(0, -1);\n    }\n\n    return `<a href=\"${url}\" target=\"_blank\" rel=\"noopener noreferrer\">${url}</a>${trailing}`;\n  }\n);\n\n\n// ============================================\n// 2. DISCOVERY QUESTION WRAPPER\n//\n// Markdown created a separate <ol> for every\n// question. Wrap the whole section so CSS can\n// maintain continuous numbering.\n// ============================================\n\nbody = body.replace(\n  /(<h2 id=\"discoveryquestions\">[\\s\\S]*?)(?=<h2 id=\"businesscase\">)/,\n  '<section class=\"discovery-section\">$1</section>'\n);\n\n\n// ============================================\n// 3. FULL STYLED HTML DOCUMENT\n// ============================================\n\nconst styledHtml = `\n<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n\n  <title>Quinn Enterprise Meeting Prep — ${company}</title>\n\n  <style>\n    * {\n      box-sizing: border-box;\n    }\n\n    body {\n      margin: 0;\n      background: #f6f7f9;\n      color: #202124;\n      font-family:\n        -apple-system,\n        BlinkMacSystemFont,\n        \"Segoe UI\",\n        Roboto,\n        Helvetica,\n        Arial,\n        sans-serif;\n      line-height: 1.65;\n    }\n\n    main {\n      max-width: 900px;\n      margin: 48px auto;\n      background: white;\n      padding: 56px 64px;\n      border: 1px solid #e5e7eb;\n      border-radius: 14px;\n      box-shadow: 0 8px 30px rgba(0,0,0,0.05);\n    }\n\n    h1 {\n      font-size: 32px;\n      line-height: 1.2;\n      margin: 0 0 14px;\n      letter-spacing: -0.5px;\n    }\n\n    h2 {\n      font-size: 21px;\n      margin-top: 42px;\n      margin-bottom: 16px;\n      padding-bottom: 8px;\n      border-bottom: 1px solid #e5e7eb;\n    }\n\n    h3 {\n      font-size: 17px;\n      line-height: 1.45;\n      margin-top: 28px;\n      margin-bottom: 10px;\n    }\n\n    p {\n      margin: 10px 0 16px;\n    }\n\n    ul,\n    ol {\n      padding-left: 24px;\n    }\n\n    li {\n      margin-bottom: 10px;\n    }\n\n    strong {\n      font-weight: 650;\n    }\n\n    a {\n      color: #2563eb;\n      text-decoration: none;\n      overflow-wrap: anywhere;\n    }\n\n    a:hover {\n      text-decoration: underline;\n    }\n\n    /* Meeting POV callout */\n    #meetingpov + p {\n      background: #f8fafc;\n      border-left: 4px solid #202124;\n      padding: 18px 20px;\n      border-radius: 0 8px 8px 0;\n    }\n\n    /* Sources underneath frontline facts */\n    #frontlineoperationsevidence + ul li:nth-child(even) {\n      list-style: none;\n      margin-top: -8px;\n      margin-bottom: 18px;\n      font-size: 13px;\n      color: #6b7280;\n    }\n\n    /* Business-case input explanations */\n    #inputstocollect + ul li:nth-child(even) {\n      list-style: none;\n      margin-top: -8px;\n      margin-bottom: 18px;\n      color: #6b7280;\n      font-size: 14px;\n    }\n\n    /* Continuous discovery-question numbering */\n    .discovery-section {\n      counter-reset: question;\n    }\n\n    .discovery-section ol {\n      list-style: none;\n      padding-left: 0;\n      margin-bottom: 4px;\n    }\n\n    .discovery-section ol li {\n      counter-increment: question;\n      position: relative;\n      padding-left: 34px;\n      margin-bottom: 4px;\n    }\n\n    .discovery-section ol li::before {\n      content: counter(question) \".\";\n      position: absolute;\n      left: 0;\n      font-weight: 700;\n    }\n\n    .discovery-section > ul {\n      list-style: none;\n      padding-left: 34px;\n      margin-top: 0;\n      margin-bottom: 20px;\n      color: #6b7280;\n      font-size: 14px;\n    }\n\n    /* Business-case status */\n    #businesscase + p {\n      display: inline-block;\n      padding: 7px 11px;\n      background: #f3f4f6;\n      border-radius: 6px;\n      font-size: 14px;\n    }\n\n    @media (max-width: 700px) {\n      body {\n        background: white;\n      }\n\n      main {\n        margin: 0;\n        padding: 32px 22px;\n        border: none;\n        border-radius: 0;\n        box-shadow: none;\n      }\n\n      h1 {\n        font-size: 27px;\n      }\n    }\n\n    @media print {\n      body {\n        background: white;\n      }\n\n      main {\n        margin: 0;\n        max-width: none;\n        padding: 24px;\n        border: none;\n        box-shadow: none;\n      }\n\n      a {\n        color: inherit;\n        text-decoration: none;\n      }\n    }\n  </style>\n</head>\n\n<body>\n  <main>\n    ${body}\n  </main>\n</body>\n</html>\n`;\n\nreturn [\n  {\n    json: {\n      ...input,\n      data: styledHtml\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4016,
+        16
+      ],
+      "id": "2d01bd84-55c8-40b3-a32b-5da26a96cfe2",
+      "name": "Style Brief"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Company Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Company Input": {
+      "main": [
+        [
+          {
+            "node": "Fetch Homepage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Homepage": {
+      "main": [
+        [
+          {
+            "node": "Extract Page Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Page Text": {
+      "main": [
+        [
+          {
+            "node": "Select Research Pages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Select Research Pages": {
+      "main": [
+        [
+          {
+            "node": "Split Research URLs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Research Pages": {
+      "main": [
+        [
+          {
+            "node": "Extract Research Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Research Text": {
+      "main": [
+        [
+          {
+            "node": "Extract Research Item",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Research Item": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Research",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Research URLs": {
+      "main": [
+        [
+          {
+            "node": "Fetch Research Pages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Research": {
+      "main": [
+        [
+          {
+            "node": "Build Evidence Package",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Evidence Package": {
+      "main": [
+        [
+          {
+            "node": "Quinn Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Quinn Analysis": {
+      "main": [
+        [
+          {
+            "node": "Extract Quinn Brief",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Quinn Brief": {
+      "main": [
+        [
+          {
+            "node": "ROI Inputs & Assumptions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ROI Inputs & Assumptions": {
+      "main": [
+        [
+          {
+            "node": "Deterministic ROI Model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Deterministic ROI Model": {
+      "main": [
+        [
+          {
+            "node": "Format Final Brief",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Final Brief": {
+      "main": [
+        [
+          {
+            "node": "Render Brief",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Render Brief": {
+      "main": [
+        [
+          {
+            "node": "Style Brief",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Brief File": {
+      "main": [
+        []
+      ]
+    },
+    "Style Brief": {
+      "main": [
+        [
+          {
+            "node": "Create Brief File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "nodeGroups": [],
+  "tags": []
+}
