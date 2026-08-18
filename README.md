@@ -4,6 +4,12 @@ An AI-enabled n8n workflow for researching a prospective frontline company, prep
 
 > **Independent portfolio project.** I built this as part of my application for Quinn's Founder’s Associate, Strategy & Special Projects role. It is not affiliated with or endorsed by Quinn or Hiller Plumbing, Heating, Cooling & Electrical. Hiller is used only as an illustrative prospect based on publicly available information.
 
+## Demo
+
+**[View the live Hiller meeting brief →](https://anc002.github.io/enterprise-meeting-prep-roi/)**
+
+The example shows the pre-meeting state of the workflow: public-company research, evidence-grounded hypotheses, discovery questions, and the customer inputs required before a defensible ROI can be calculated.
+
 ## Why I built this
 
 Quinn's role description called out work such as preparing for enterprise sales meetings, building ROI models, writing research reports, and turning customer conversations into a point of view.
@@ -26,7 +32,8 @@ The workflow has two main stages.
 
 ### 1. Pre-meeting intelligence
 
-Input:
+Inputs:
+
 - company name
 - website
 - meeting context
@@ -49,7 +56,7 @@ The workflow then:
    - relevance hypotheses
    - source conflicts
    - important unknowns
-   - exactly seven discovery questions
+   - seven discovery questions
    - ROI inputs to collect
    - meeting POV
 
@@ -84,7 +91,7 @@ The analysis step is explicitly instructed to separate:
 - **Hypotheses** — plausible implications that still need validation
 - **Unknowns** — information not established by the evidence
 
-Facts retain source URLs so the user can inspect the underlying evidence.
+Facts retain source URLs so the underlying evidence can be inspected directly.
 
 ### Internal vs. customer-facing evidence
 
@@ -114,7 +121,7 @@ The ROI model:
 
 ## Example: Hiller
 
-The included example brief uses Hiller Plumbing, Heating, Cooling & Electrical as an illustrative prospect.
+The included example uses Hiller Plumbing, Heating, Cooling & Electrical as an illustrative prospect.
 
 The workflow surfaced public evidence including:
 
@@ -134,7 +141,7 @@ From that evidence, the workflow generated hypotheses around:
 
 It did **not** assume that Hiller has a training problem. The brief keeps that as something to validate through discovery.
 
-See [`examples/hiller-meeting-brief.html`](examples/hiller-meeting-brief.html).
+**[View the live Hiller meeting brief →](https://anc002.github.io/enterprise-meeting-prep-roi/)**
 
 ## Robustness testing
 
@@ -201,7 +208,7 @@ This is a focused V1, not a production research agent.
 .
 ├── README.md
 ├── workflow.json
+├── index.html
 └── examples/
     ├── workflow-overview.png
     └── hiller-meeting-brief.html
-```
